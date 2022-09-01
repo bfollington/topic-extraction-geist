@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import reactLogo from "./assets/react.svg";
 import "./App.css";
 import nlp from "compromise/three";
 import notes from "./notes";
+import { ForceGraph2D, ForceGraph3D } from "react-force-graph";
+import SpriteText from "three-spritetext";
 
 function extractPlainTextTerms(o: any) {
   return o.terms.map((t: any) => t.normal).join(" ");
@@ -26,8 +28,12 @@ const BANNED_TERMS = [
   "is",
   "the",
   "our",
+  "you",
+  "thing",
+  "your",
 ];
 
+type Note = { title: string; body: string };
 function extractTerms(note: { title: string; body: string }) {
   return new Set(
     (nlp(note.body).normalize("heavy") as any)
@@ -43,37 +49,68 @@ function intersection<T>(a: Set<T>, b: Set<T>) {
   return new Set([...a].filter((x) => b.has(x)));
 }
 
+const data = {
+  nodes: [
+    { id: "A", group: 1 },
+    { id: "B", group: 1 },
+  ],
+  links: [{ source: "A", target: "B", value: "Hello" }],
+};
+
+function buildData(notes: Note[]) {
+  const analysis = notes.map(extractTerms);
+
+  return {
+    nodes: notes.map((n) => ({ id: n.title, group: 1 })),
+    links: notes.flatMap((n, i) => {
+      const res: any[] = [];
+      notes.forEach((m, j) => {
+        if (i === j) return [];
+
+        const overlap = intersection(analysis[i], analysis[j]);
+        console.log(overlap);
+        overlap.forEach((o) => {
+          res.push({
+            source: n.title,
+            target: m.title,
+            value: o,
+            curvature: 0.1 + Math.random() * 0.5,
+          });
+        });
+      });
+
+      return res;
+    }),
+  };
+}
+
 function App() {
   const [count, setCount] = useState(0);
 
-  const analysis = notes.map(extractTerms);
-  console.log(analysis);
-
-  console.log(intersection(analysis[2], analysis[1]));
+  const data = useMemo(() => buildData(notes), [notes]);
 
   return (
-    <div className="App">
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </div>
+    <ForceGraph3D
+      linkWidth={1}
+      nodeThreeObject={(node: any) => {
+        const sprite = new SpriteText(node.id);
+        sprite.color = node.color;
+        sprite.textHeight = 6;
+        return sprite;
+      }}
+      nodeLabel="id"
+      nodeAutoColorBy="group"
+      linkCurvature="curvature"
+      linkThreeObjectExtend={true}
+      linkThreeObject={(link: any) => {
+        // extend link with text sprite
+        const sprite = new SpriteText(`${link.value}`);
+        sprite.color = "lightgrey";
+        sprite.textHeight = 4;
+        return sprite;
+      }}
+      graphData={data}
+    />
   );
 }
 
