@@ -51,14 +51,6 @@ function intersection<T>(a: Set<T>, b: Set<T>) {
   return new Set([...a].filter((x) => b.has(x)));
 }
 
-const data = {
-  nodes: [
-    { id: "A", group: 1 },
-    { id: "B", group: 1 },
-  ],
-  links: [{ source: "A", target: "B", value: "Hello" }],
-};
-
 function buildData(notes: Note[]) {
   const analysis = notes.map(extractTerms);
 
@@ -134,6 +126,8 @@ function App() {
           return sprite;
         }}
         linkPositionUpdate={(sprite, { start, end }, link) => {
+          // HACK: Use hashcode of text to slightly offset it, prevents overlapping labels
+          // hashcode is stable between re-renders so it's useful here
           const k = (hashCode((link as any).value) % 1024) / 100;
           const coords = ["x" as const, "y" as const, "z" as const].map(
             (c) => ({
