@@ -102,6 +102,7 @@ That update cascades to flip decisions or reasoning chains you've formed long in
 
 ...
     `,
+    author: "conaw",
   },
 ];
 
