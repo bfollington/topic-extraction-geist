@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import reactLogo from "./assets/react.svg";
-import "./App.css";
 import nlp from "compromise/three";
-import notes from "./notes";
-import { ForceGraph2D, ForceGraph3D } from "react-force-graph";
-import SpriteText from "three-spritetext";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { ForceGraph3D } from "react-force-graph";
+import SpriteText from "three-spritetext";
+import "./App.css";
+import notes from "./notes";
 
 function extractPlainTextTerms(o: any) {
   return o.terms.map((t: any) => t.normal).join(" ");
@@ -135,12 +134,13 @@ function App() {
           return sprite;
         }}
         linkPositionUpdate={(sprite, { start, end }, link) => {
-          const k = (hashCode(link.value) % 1024) / 100;
-          const middlePos = Object.assign(
-            ...["x", "y", "z"].map((c) => ({
+          const k = (hashCode((link as any).value) % 1024) / 100;
+          const coords = ["x" as const, "y" as const, "z" as const].map(
+            (c) => ({
               [c]: start[c] + (end[c] - start[c]) / 2 + k,
-            }))
+            })
           );
+          const middlePos = Object.assign({}, ...coords);
 
           // Position sprite
           Object.assign(sprite.position, middlePos);
